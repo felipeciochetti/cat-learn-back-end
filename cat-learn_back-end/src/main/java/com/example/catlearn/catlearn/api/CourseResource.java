@@ -1,134 +1,145 @@
 package com.example.catlearn.catlearn.api;
 
 
+import java.io.File;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.GenericEntity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.apache.coyote.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import model.catlearn.Course;
-import repositorio.Courses;
-import service.catlearn.CourseService;
+import com.example.catlearn.catlearn.exception.ResourceNotFoundException;
+import com.example.catlearn.catlearn.model.Course;
+import com.example.catlearn.catlearn.repository.CourseRepository;
+import com.example.catlearn.catlearn.services.CourseService;
+import com.example.catlearn.catlearn.utils.ContextUtils;
+import com.example.catlearn.catlearn.utils.Functions;
+import com.example.catlearn.catlearn.utils.UploadFileUtils;
 
-@Path("/course")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
+
+@RestController
+@CrossOrigin(origins = "http://localhost:4200")
 public class CourseResource  implements Serializable{
 
 
-	CourseService service = new CourseService();
 
-	Courses repositorio = new Courses();
-
-
-
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response listar() {
-
-		List<Course> list =  service.listar();
-
-		GenericEntity<List<Course>> myEntity = new GenericEntity<List<Course>>(list) {};
-
-
-		return		Response.status(201).entity(myEntity).build();
-	}
+	@Autowired
+	CourseRepository repository;
 
 	
+	@Autowired
+	CourseService service;
+
+
+
+	@GetMapping("/courses")
 	
+	public ResponseEntity<List<Course>> getAllCourses(@RequestParam(required = false) String title) {
 	
+			List<Course> courses = new ArrayList<Course>();
+
+			if (title == null)
+				repository.findAll().forEach(courses::add);
+			else {
+				repository.findByName(title).forEach(courses::add);
+
+			}
+			
+			
+			 return new  ResponseEntity<>(courses, HttpStatus.OK);
+	}
+
+	@GetMapping("/courses/{id}")
+	  public ResponseEntity<Course> getCourseById(@PathVariable("id") long id) {
+	  
+		
+		Course data = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course: " + id));
+
+
+
+	      return new ResponseEntity<>(data, HttpStatus.OK);
+	  
+	  }
+
+
+	@PostMapping("/courses")
+	  public ResponseEntity<Course> createCourse(@RequestBody Course course) {
+	    	
+	    	Course new_course = service.adicionar(course);
+	    	
+	    	
+	      return new ResponseEntity<>(new_course, HttpStatus.CREATED);
+	  
+	  }
 	
-	@GET
-	@Path("/search/{name}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response get(@PathParam("name") String name) {
+
+	 @PutMapping("/courses/{id}")
+	  public ResponseEntity<Course> updateCourse(@PathVariable("id") long id, @RequestBody Course tutorial) {
+	   // Optional<Course> tutorialData = repository.findById(id);
+		 
+
+			Course data = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course: " + id));
+			
+			tutorial.setId(data.getId());
+		tutorial.setModules(data.getModules());
+
+	      return new ResponseEntity<>(repository.save(tutorial), HttpStatus.OK);
+	    
+	  }
+	 
+	 
+
+	 @DeleteMapping("/courses/{id}")
+	  public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) {
+	    try {
+	      repository.deleteById(id);
+	      return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	    } catch (Exception e) {
+	      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	  }
+
+
 		
-		//commint Mac :)
-		
-		List<Course> list =		service.searchByName(name);		
-		
-		
-		if(list.isEmpty()){
-			list = repositorio.getTodosCoursees();
+		@PostMapping("/courses/course-img/{code}")
+
+		public ResponseEntity uploadImage(
+				@PathVariable("code") String code,
+				InputStream fileInputStream){
+				
+			
+
+			System.out.println(fileInputStream.toString());
+
+
+			Functions.criarDiretorio(ContextUtils.getInstance().getPathFilesAttachedsCatLearnCourse()  +  code);
+
+			String newFileName = ContextUtils.getInstance().getPathFilesAttachedsCatLearnCourse() + code + File.separator +   "imagem_capa_course" + ".jpg";
+
+			// save it
+			
+			UploadFileUtils.writeToFile(fileInputStream, newFileName);
+
+
+			   String output = "File uploaded to : " + newFileName;
+				   System.out.println(output);
+				   
+			return new ResponseEntity<>(HttpStatus.OK);
 		}
-
-		GenericEntity<List<Course>> myEntity = new GenericEntity<List<Course>>(list) {};
-
-		return		Response.status(201).entity(myEntity).build();
-
-
-	}
-	@GET
-	@Path("{id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response get(@PathParam("id") int id) {
-		Course course = repositorio.get(id);
-		if (course != null) {
-			return Response.ok(course, MediaType.APPLICATION_JSON).build();
-		} else {
-			return Response.status(Response.Status.NOT_FOUND).build();
-		}
-	}
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public Response add(Course course ) {
-
-		try{
-
-			course = service.adicionar(course);
-			return Response.ok(course, MediaType.APPLICATION_JSON).build();
-
-		}catch(Exception e){
-			return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-		}
-
-
-	}
-
-
-	@PUT
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Path("{id}")
-	public Response update(@PathParam("id") int id, Course course ) {
-		course.setId(id);
-		try {
-			service.update(course);
-			return Response.ok().build();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(e.getMessage());
-			return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-		}
-
-	}
-
-	@DELETE
-	@Path("{id}")
-	public Response delete(@PathParam("id") int id) {
-
-		String ret = service.excluir(id) ;
-
-		if(ret.equals("")){
-			return Response.ok().build();
-		}else{
-			return Response.status(Response.Status.FORBIDDEN).entity(ret).build();
-
-		}
-
-	}
-
-
-
 
 
 

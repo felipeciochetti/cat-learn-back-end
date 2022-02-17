@@ -1,115 +1,111 @@
-package api;
+package com.example.catlearn.catlearn.api;
 
 
 import java.io.Serializable;
 import java.util.List;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.GenericEntity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-import model.catlearn.Lesson;
-import repositorio.Lessons;
-import service.catlearn.LessonService;
+import com.example.catlearn.catlearn.exception.ResourceNotFoundException;
+import com.example.catlearn.catlearn.model.Module;
+import com.example.catlearn.catlearn.repository.LessonRepository;
+import com.example.catlearn.catlearn.repository.ModuleRepository;
+import com.example.catlearn.catlearn.services.LessonService;
 
-@Path("/lesson")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
+
+
+@RestController
+@CrossOrigin(origins = "http://localhost:4200")
 public class LessonResource  implements Serializable{
 
 
-	LessonService service = new LessonService();
 
-	Lessons repositorio = new Lessons();
-
-
-
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response listar() {
-
-		List<Lesson> list =  service.listar();
-
-		GenericEntity<List<Lesson>> myEntity = new GenericEntity<List<Lesson>>(list) {};
+	@Autowired
+	LessonRepository repository;
 
 
-		return		Response.status(201).entity(myEntity).build();
-	}
-
-	@GET
-	@Path("{id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response get(@PathParam("id") int id) {
-		Lesson course = repositorio.get(id);
-		if (course != null) {
-			return Response.ok(course, MediaType.APPLICATION_JSON).build();
-		} else {
-			return Response.status(Response.Status.NOT_FOUND).build();
-		}
-	}
-
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public Response add(Lesson course ) {
-
-		try{
-
-			course = service.adicionar(course);
-			return Response.ok(course, MediaType.APPLICATION_JSON).build();
-
-		}catch(Exception e){
-			return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-		}
+	@Autowired
+	ModuleRepository repositoryModule;
 
 
+	@Autowired
+	LessonService service;
+
+
+	@GetMapping("/module/{idModule}/lessons")
+	public ResponseEntity<List<com.example.catlearn.catlearn.model.Lesson>> getAllLessonsByModule(@PathVariable("idModule") long idModule) {
+
+		List<com.example.catlearn.catlearn.model.Lesson> lessons = repository.findByModule_id(idModule);
+
+
+		return new  ResponseEntity<>(lessons, HttpStatus.OK);
 	}
 
 
-	@PUT
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Path("{id}")
-	public Response update(@PathParam("id") int id, Lesson lesson ) {
-		lesson.setId(id);
+	@GetMapping("/module/{idModule}/lesson/{idLesson}")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Lesson> getLessonById(@PathVariable("idModule") long idModule,@PathVariable("idLesson") long idLesson) {
 
-		try {
-			service.update(lesson);
-			return Response.ok().build();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-		}
+		com.example.catlearn.catlearn.model.Lesson data = repository.findByIdAndModule_id(idLesson,idModule).orElseThrow(() -> new ResourceNotFoundException("Modulo: " + idLesson));
 
+		return new ResponseEntity<>(data, HttpStatus.OK);
 	}
 
-	@DELETE
-	@Path("{id}")
-	public Response delete(@PathParam("id") int id) {
 
-		String ret = service.excluir(id) ;
+	@PostMapping("/module/{idModule}//lesson")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Lesson> createLesson(@PathVariable("idModule") long idModule,@RequestBody com.example.catlearn.catlearn.model.Lesson lesson) {
+		
+		
+		Module module = repositoryModule.findById(idModule).orElseThrow(
+				() -> new ResourceNotFoundException("Module:" + idModule));
 
-		if(ret.equals("")){
-			return Response.ok().build();
-		}else{
-			return Response.status(Response.Status.FORBIDDEN).entity(ret).build();
+		
+		
+			com.example.catlearn.catlearn.model.Lesson new_lesson = service.adicionar(module,lesson);
 
-		}
+
+			return new ResponseEntity<>(new_lesson, HttpStatus.CREATED);
+		
+	}
+
+
+	@PutMapping("/module/{idModule}/lesson/{idLesson}")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Lesson> updateLesson(@PathVariable("idModule") long idModule,@PathVariable("idLesson") long idLesson, @RequestBody com.example.catlearn.catlearn.model.Lesson lesson) {
+
+		Module course = repositoryModule.findById(idModule).orElseThrow(() -> new ResourceNotFoundException("Curso:" + idModule));
+
+
+		
+		com.example.catlearn.catlearn.model.Lesson dataLesson = repository.findByIdAndModule_id(idLesson,idModule).orElseThrow(() -> new ResourceNotFoundException("MOdulo:" + idLesson));
+	
+		lesson.setModule(course);
+		lesson.setId(dataLesson.getId());
+		repository.save(lesson);
+
+		return ResponseEntity.noContent().build();
+
+
 
 	}
 
 
+	@DeleteMapping("/module/{idModule}/lesson/{idLesson}")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Lesson> delete(@PathVariable Long idModule,@PathVariable Long idLesson) {
+		com.example.catlearn.catlearn.model.Lesson dataLesson = repository.findByIdAndModule_id(idLesson,idModule).orElseThrow(() -> new ResourceNotFoundException("MOdulo:" + idLesson));
+		
+		repository.delete(dataLesson);
 
-
-
-
-
+		return ResponseEntity.noContent().build();
+	}
 
 
 

@@ -1,115 +1,120 @@
-package api;
+package com.example.catlearn.catlearn.api;
 
 
+import java.io.File;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.GenericEntity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import model.catlearn.Module;
-import repositorio.Modules;
-import service.catlearn.ModuleService;
+import com.example.catlearn.catlearn.exception.ResourceNotFoundException;
+import com.example.catlearn.catlearn.model.Course;
+import com.example.catlearn.catlearn.repository.CourseRepository;
+import com.example.catlearn.catlearn.repository.ModuleRepository;
+import com.example.catlearn.catlearn.services.ModuleService;
+import com.example.catlearn.catlearn.utils.ContextUtils;
+import com.example.catlearn.catlearn.utils.Functions;
+import com.example.catlearn.catlearn.utils.UploadFileUtils;
 
-@Path("/module")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
+
+
+@RestController
+@CrossOrigin(origins = "http://localhost:4200")
 public class ModuleResource  implements Serializable{
 
 
-	ModuleService service = new ModuleService();
 
-	Modules repositorio = new Modules();
-
-
-
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response listar() {
-
-		List<Module> list =  service.listar();
-
-		GenericEntity<List<Module>> myEntity = new GenericEntity<List<Module>>(list) {};
+	@Autowired
+	ModuleRepository repository;
 
 
-		return		Response.status(201).entity(myEntity).build();
-	}
-
-	@GET
-	@Path("{id}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response get(@PathParam("id") int id) {
-		Module course = repositorio.get(id);
-		if (course != null) {
-			return Response.ok(course, MediaType.APPLICATION_JSON).build();
-		} else {
-			return Response.status(Response.Status.NOT_FOUND).build();
-		}
-	}
-
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	public Response add(Module course ) {
-
-		try{
-
-			course = service.adicionar(course);
-			return Response.ok(course, MediaType.APPLICATION_JSON).build();
-
-		}catch(Exception e){
-			return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-		}
+	@Autowired
+	CourseRepository repositoryCourse;
 
 
+	@Autowired
+	ModuleService service;
+
+
+	@GetMapping("/courses/{idCourse}/modules")
+	public ResponseEntity<List<com.example.catlearn.catlearn.model.Module>> getAllModulesByCourse(@PathVariable("idCourse") long idCourse) {
+
+		List<com.example.catlearn.catlearn.model.Module> modules = repository.findByCourse_id(idCourse);
+
+
+		return new  ResponseEntity<>(modules, HttpStatus.OK);
 	}
 
 
-	@PUT
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Path("{id}")
-	public Response update(@PathParam("id") int id, Module module ) {
-		module.setId(id);
+	@GetMapping("/courses/{idCourse}/module/{idModule}")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Module> getModuleById(@PathVariable("idCourse") long idCourse,@PathVariable("idModule") long idModule) {
 
-		try {
-			service.update(module);
-			return Response.ok().build();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-		}
+		com.example.catlearn.catlearn.model.Module data = repository.findByIdAndCourse_id(idModule,idCourse).orElseThrow(() -> new ResourceNotFoundException("Modulo: " + idModule));
 
+		return new ResponseEntity<>(data, HttpStatus.OK);
 	}
 
-	@DELETE
-	@Path("{id}")
-	public Response delete(@PathParam("id") int id) {
 
-		String ret = service.excluir(id) ;
+	@PostMapping("/courses/{idCourse}/module")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Module> createModule(@PathVariable("idCourse") long idCourse,@RequestBody com.example.catlearn.catlearn.model.Module module) {
+		
+		Course course = repositoryCourse.findById(idCourse).orElseThrow(
+				() -> new ResourceNotFoundException("Curso:" + idCourse));
 
-		if(ret.equals("")){
-			return Response.ok().build();
-		}else{
-			return Response.status(Response.Status.FORBIDDEN).entity(ret).build();
+		
 
-		}
+			com.example.catlearn.catlearn.model.Module new_module = service.adicionar(course,module);
+
+
+			return new ResponseEntity<>(new_module, HttpStatus.CREATED);
+		
+	}
+
+
+	@PutMapping("/courses/{idCourse}/module/{idModule}")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Module> updateModule(@PathVariable("idCourse") long idCourse,@PathVariable("idModule") long idModule, @RequestBody com.example.catlearn.catlearn.model.Module module) {
+
+		Course course = repositoryCourse.findById(idCourse).orElseThrow(() -> new ResourceNotFoundException("Curso:" + idCourse));
+
+
+		
+		com.example.catlearn.catlearn.model.Module dataModule = repository.findByIdAndCourse_id(idModule,idCourse).orElseThrow(() -> new ResourceNotFoundException("MOdulo:" + idModule));
+	
+		module.setCourse(course);
+		module.setId(dataModule.getId());
+		module.setLessons(dataModule.getLessons());
+		repository.save(module);
+
+		return ResponseEntity.noContent().build();
+
+
 
 	}
 
 
+	@DeleteMapping("/courses/{idCourse}/module/{idModule}")
+	public ResponseEntity<com.example.catlearn.catlearn.model.Module> delete(@PathVariable Long idCourse,@PathVariable Long idModule) {
+		com.example.catlearn.catlearn.model.Module dataModule = repository.findByIdAndCourse_id(idModule,idCourse).orElseThrow(() -> new ResourceNotFoundException("MOdulo:" + idModule));
+		
+		repository.delete(dataModule);
 
-
-
-
-
+		return ResponseEntity.noContent().build();
+	}
 
 
 
