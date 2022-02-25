@@ -40,106 +40,122 @@ public class CourseResource  implements Serializable{
 	@Autowired
 	CourseRepository repository;
 
-	
+
 	@Autowired
 	CourseService service;
 
 
 
 	@GetMapping("/courses")
-	
+
 	public ResponseEntity<List<Course>> getAllCourses(@RequestParam(required = false) String title) {
-	
-			List<Course> courses = new ArrayList<Course>();
 
-			if (title == null)
-				repository.findAll().forEach(courses::add);
-			else {
-				repository.findByName(title).forEach(courses::add);
+		List<Course> courses = new ArrayList<Course>();
 
-			}
-			
-			
-			 return new  ResponseEntity<>(courses, HttpStatus.OK);
+		if (title == null)
+			repository.findAll().forEach(courses::add);
+		else {
+			repository.findByName(title).forEach(courses::add);
+
+		}
+
+
+		return new  ResponseEntity<>(courses, HttpStatus.OK);
+	}
+
+
+	@GetMapping("/courses/search")
+	public ResponseEntity<List<Course>>  get(@RequestParam String name) {
+
+
+		List<Course> list =		repository.findByNameLike("%" + name + "%");		
+
+
+		if(list.isEmpty()){
+			repository.findAll().forEach(list::add);
+		}
+
+
+		return new  ResponseEntity<>(list, HttpStatus.OK);
 	}
 
 	@GetMapping("/courses/{id}")
-	  public ResponseEntity<Course> getCourseById(@PathVariable("id") long id) {
-	  
-		
+	public ResponseEntity<Course> getCourseById(@PathVariable("id") long id) {
+
+
 		Course data = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course: " + id));
 
 
 
-	      return new ResponseEntity<>(data, HttpStatus.OK);
-	  
-	  }
+		return new ResponseEntity<>(data, HttpStatus.OK);
+
+	}
 
 
 	@PostMapping("/courses")
-	  public ResponseEntity<Course> createCourse(@RequestBody Course course) {
-	    	
-	    	Course new_course = service.adicionar(course);
-	    	
-	    	
-	      return new ResponseEntity<>(new_course, HttpStatus.CREATED);
-	  
-	  }
-	
+	public ResponseEntity<Course> createCourse(@RequestBody Course course) {
 
-	 @PutMapping("/courses/{id}")
-	  public ResponseEntity<Course> updateCourse(@PathVariable("id") long id, @RequestBody Course tutorial) {
-	   // Optional<Course> tutorialData = repository.findById(id);
-		 
+		Course new_course = service.adicionar(course);
 
-			Course data = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course: " + id));
-			
-			tutorial.setId(data.getId());
+
+		return new ResponseEntity<>(new_course, HttpStatus.CREATED);
+
+	}
+
+
+	@PutMapping("/courses/{id}")
+	public ResponseEntity<Course> updateCourse(@PathVariable("id") long id, @RequestBody Course tutorial) {
+		// Optional<Course> tutorialData = repository.findById(id);
+
+
+		Course data = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Course: " + id));
+
+		tutorial.setId(data.getId());
 		tutorial.setModules(data.getModules());
 
-	      return new ResponseEntity<>(repository.save(tutorial), HttpStatus.OK);
-	    
-	  }
-	 
-	 
+		return new ResponseEntity<>(repository.save(tutorial), HttpStatus.OK);
 
-	 @DeleteMapping("/courses/{id}")
-	  public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) {
-	    try {
-	      repository.deleteById(id);
-	      return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-	    } catch (Exception e) {
-	      return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
-	  }
+	}
 
 
-		
-		@PostMapping("/courses/course-img/{code}")
 
-		public ResponseEntity uploadImage(
-				@PathVariable("code") String code,
-				InputStream fileInputStream){
-				
-			
-
-			System.out.println(fileInputStream.toString());
-
-
-			Functions.criarDiretorio(ContextUtils.getInstance().getPathFilesAttachedsCatLearnCourse()  +  code);
-
-			String newFileName = ContextUtils.getInstance().getPathFilesAttachedsCatLearnCourse() + code + File.separator +   "imagem_capa_course" + ".jpg";
-
-			// save it
-			
-			UploadFileUtils.writeToFile(fileInputStream, newFileName);
-
-
-			   String output = "File uploaded to : " + newFileName;
-				   System.out.println(output);
-				   
-			return new ResponseEntity<>(HttpStatus.OK);
+	@DeleteMapping("/courses/{id}")
+	public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) {
+		try {
+			repository.deleteById(id);
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+
+
+	@PostMapping("/courses/course-img/{code}")
+
+	public ResponseEntity uploadImage(
+			@PathVariable("code") String code,
+			InputStream fileInputStream){
+
+
+
+		System.out.println(fileInputStream.toString());
+
+
+		Functions.criarDiretorio(ContextUtils.getInstance().getPathFilesAttachedsCatLearnCourse()  +  code);
+
+		String newFileName = ContextUtils.getInstance().getPathFilesAttachedsCatLearnCourse() + code + File.separator +   "imagem_capa_course" + ".jpg";
+
+		// save it
+
+		UploadFileUtils.writeToFile(fileInputStream, newFileName);
+
+
+		String output = "File uploaded to : " + newFileName;
+		System.out.println(output);
+
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
 
 
 
