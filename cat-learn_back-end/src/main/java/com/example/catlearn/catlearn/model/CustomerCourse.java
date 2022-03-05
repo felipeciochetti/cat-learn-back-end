@@ -1,15 +1,25 @@
 package com.example.catlearn.catlearn.model;
 
+import java.io.Serializable;
+
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
+import javax.persistence.Table;
 
 @Entity
-class CustomerCourse {
+@Table(name="customer_course")
 
-    @EmbeddedId
+public  class CustomerCourse  implements Serializable{
+
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@EmbeddedId
     CustomerCourseKey id;
 
     @ManyToOne

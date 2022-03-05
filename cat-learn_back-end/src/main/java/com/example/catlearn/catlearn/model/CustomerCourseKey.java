@@ -7,12 +7,14 @@ import javax.persistence.Embeddable;
 
 @Embeddable
 
-class CustomerCourseKey implements Serializable {
+public class CustomerCourseKey implements Serializable {
 	
 	
 	Long pessoaId;
 
 	Long courseId;
+	
+	
 
 	public Long getPessoaId() {
 		return pessoaId;

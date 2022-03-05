@@ -10,10 +10,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
+@Table(name="pessoa")
+
 public class Pessoa  implements Serializable{
 
 	@Id
@@ -46,8 +49,8 @@ public class Pessoa  implements Serializable{
 	@Column(length=30)
 	private String referencia;
 	
-	@OneToMany(mappedBy = "student")
-    Set<Course> courses;
+	@OneToMany(mappedBy = "course")
+    Set<CustomerCourse> courses;
 
 	public long getIdPessoa() {
 		return idPessoa;
@@ -153,14 +156,15 @@ public class Pessoa  implements Serializable{
 		this.referencia = referencia;
 	}
 
-	public Set<Course> getCourses() {
+	public Set<CustomerCourse> getCourses() {
 		return courses;
 	}
 
-	public void setCourses(Set<Course> courses) {
+	public void setCourses(Set<CustomerCourse> courses) {
 		this.courses = courses;
 	}
-	
+
+		
 	
 	
 
