@@ -14,9 +14,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import lombok.Data;
+
 @Entity
 @Table(name="pessoa")
-
+@Data
 public class Pessoa  implements Serializable{
 
 	@Id

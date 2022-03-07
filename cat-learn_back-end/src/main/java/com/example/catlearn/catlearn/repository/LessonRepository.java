@@ -16,4 +16,6 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 	
 	List<Lesson> findByModule_id(long idModule);
 	
+	List<Lesson> findByCourse_id(long idCourse);
+	
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.catlearn.catlearn.model.Module;
 import com.example.catlearn.catlearn.exception.ResourceNotFoundException;
+import com.example.catlearn.catlearn.model.Course;
 import com.example.catlearn.catlearn.model.Lesson;
 import com.example.catlearn.catlearn.repository.ModuleRepository;
 import com.example.catlearn.catlearn.repository.LessonRepository;
@@ -40,23 +41,14 @@ public class LessonService   implements Serializable{
 
 
 
-	public Lesson adicionar(com.example.catlearn.catlearn.model.Lesson lesson) throws Exception{
 
 
-		
-		return repository.save(lesson);
-
-
-
-	}
-
-
-
-	public Lesson adicionar(Module module, Lesson lesson) {
+	public Lesson adicionar(Course course,Module module, Lesson lesson) {
 		// TODO Auto-generated method stub
 		
 		
 		lesson.setModule(module);
+		lesson.setCourse(course);
 
     	Lesson new_lesson = repository.save(lesson);
     	
