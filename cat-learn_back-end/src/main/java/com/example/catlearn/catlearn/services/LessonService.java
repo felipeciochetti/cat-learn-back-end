@@ -48,7 +48,6 @@ public class LessonService   implements Serializable{
 		
 		
 		lesson.setModule(module);
-		lesson.setCourse(course);
 
     	Lesson new_lesson = repository.save(lesson);
     	

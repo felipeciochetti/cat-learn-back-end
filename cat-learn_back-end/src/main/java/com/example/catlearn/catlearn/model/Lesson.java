@@ -68,12 +68,6 @@ public class Lesson  implements Serializable{
 	private Module module;
 	
 
-	@JoinColumn(name = "idCourse")
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-	@JsonBackReference
-	private Course course;
-	
 	
 
 	public long getId() {
@@ -216,14 +210,7 @@ public class Lesson  implements Serializable{
 	}
 
 
-	public Course getCourse() {
-		return course;
-	}
-
-
-	public void setCourse(Course course) {
-		this.course = course;
-	}
+	
 
 	
 	

@@ -61,6 +61,8 @@ public class Module  implements Serializable{
 	private String createdby;
 	@Column(length=15)
 	private String category;
+	@Transient
+	private Long idCourse;
 
 	@JoinColumn(name = "idCourse")
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -175,6 +177,10 @@ public class Module  implements Serializable{
 
 	public void setLessons(List<Lesson> lessons) {
 		this.lessons = lessons;
+	}
+	
+	public Long getIdCourse() {
+		return course.getId();
 	}
 
 	@Override

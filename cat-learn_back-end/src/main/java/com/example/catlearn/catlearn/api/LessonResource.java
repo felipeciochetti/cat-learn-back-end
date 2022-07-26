@@ -61,10 +61,10 @@ public class LessonResource  implements Serializable{
 	@GetMapping("/course/{idCourse}/lessons")
 	public ResponseEntity<List<com.example.catlearn.catlearn.model.Lesson>> getAllLessonsByCourse(@PathVariable("idCourse") long idCourse) {
 
-		List<com.example.catlearn.catlearn.model.Lesson> lessons = repository.findByCourse_id(idCourse);
+		//List<com.example.catlearn.catlearn.model.Lesson> lessons = repository.findByCourse_id(idCourse);
 
 
-		return new  ResponseEntity<>(lessons, HttpStatus.OK);
+		return new  ResponseEntity<>(null, HttpStatus.OK);
 	}
 
 	
