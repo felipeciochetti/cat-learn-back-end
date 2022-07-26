@@ -61,14 +61,7 @@ public class ModuleResource  implements Serializable{
 	}
 
 
-	@GetMapping("/courses/{idCourse}/module/{idModule}")
-	public ResponseEntity<com.example.catlearn.catlearn.model.Module> getModuleById(@PathVariable("idCourse") long idCourse,@PathVariable("idModule") long idModule) {
-
-		com.example.catlearn.catlearn.model.Module data = repository.findByIdAndCourse_id(idModule,idCourse).orElseThrow(() -> new ResourceNotFoundException("Modulo: " + idModule));
-
-		return new ResponseEntity<>(data, HttpStatus.OK);
-	}
-
+	
 	@GetMapping("/module/{idModule}")
 	public ResponseEntity<com.example.catlearn.catlearn.model.Module> getModuleById(@PathVariable("idModule") long idModule) {
 
